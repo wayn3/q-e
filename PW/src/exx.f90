@@ -25,6 +25,7 @@ MODULE exx
   ! general purpose vars
   !
   REAL(DP):: exxalfa=0._dp                ! 1 if exx, 0 elsewhere
+  REAL(DP):: exxbeta=0._dp                ! fraction for the lr part @WC
   !
   ! variables defining the auxiliary k-point grid
   ! used in X BZ integration
@@ -635,7 +636,8 @@ MODULE exx
      !------------------------------------------------------------------------
      !This SUBROUTINE is called when restarting an exx calculation
      USE funct,                ONLY : get_exx_fraction, start_exx, &
-                                      exx_is_active, get_screening_parameter
+                                      exx_is_active, get_screening_parameter, &
+                                      get_exx_lr_fraction !@WC
 
      IMPLICIT NONE
      LOGICAL, INTENT(in) :: l_exx_was_active
@@ -645,6 +647,7 @@ MODULE exx
      erfc_scrlen = get_screening_parameter()
      exxdiv = exx_divergence()
      exxalfa = get_exx_fraction()
+     exxbeta = get_exx_lr_fraction() !@WC
      CALL start_exx()
      CALL weights()
      CALL exxinit()
@@ -670,7 +673,8 @@ MODULE exx
     USE mp_bands,             ONLY : me_bgrp, set_bgrp_indices, nbgrp
     USE mp,                   ONLY : mp_sum, mp_bcast
     USE funct,                ONLY : get_exx_fraction, start_exx,exx_is_active,&
-                                     get_screening_parameter, get_gau_parameter
+                                     get_screening_parameter, get_gau_parameter,&
+                                     get_exx_lr_fraction !@WC
     USE scatter_mod,          ONLY : gather_grid, scatter_grid
     USE fft_interfaces,       ONLY : invfft
     USE uspp,                 ONLY : nkb, vkb, okvan
@@ -1642,6 +1646,7 @@ MODULE exx
     USE kinds,     ONLY : DP
     USE cell_base, ONLY : tpiba, at, tpiba2
     USE constants, ONLY : fpi, e2, pi
+    USE funct,     ONLY : get_igcx !@WC
     !
     IMPLICIT NONE
     !
@@ -1658,6 +1663,9 @@ MODULE exx
     REAL(DP) :: grid_factor_track(ngm), qq_track(ngm)
     REAL(DP) :: nqhalf_dble(3)
     LOGICAL :: odg(3)
+    INTEGER :: igcx !@WC
+    !
+    igcx = get_igcx() !@WC
     !
     ! First the types of Coulomb potential that need q(3) and an external call
     !
@@ -1724,7 +1732,14 @@ MODULE exx
       ELSEIF (qq > eps_qdiv) THEN
          !
          IF ( erfc_scrlen > 0  ) THEN
-            fac(ig)=e2*fpi/qq*(1._DP-exp(-qq/4._DP/erfc_scrlen**2)) * grid_factor_track(ig)
+            IF ( igcx == 29 ) THEN
+            !@WC:CAM
+               if ( exxalfa == 0._DP) exxalfa = 0.0001_DP
+               fac(ig)=e2*fpi/qq*(1._DP+exp(-qq/4._DP/erfc_scrlen**2)*exxbeta/exxalfa)*grid_factor_track(ig)
+            ELSE
+            !HSE
+               fac(ig)=e2*fpi/qq*(1._DP-exp(-qq/4._DP/erfc_scrlen**2)) * grid_factor_track(ig)
+            END IF
          ELSEIF( erf_scrlen > 0 ) THEN
             fac(ig)=e2*fpi/qq*(exp(-qq/4._DP/erf_scrlen**2)) * grid_factor_track(ig)
          ELSE
@@ -2319,6 +2334,7 @@ MODULE exx
      USE gvecw,          ONLY : gcutw
      USE mp_bands,       ONLY : intra_bgrp_comm
      USE mp,             ONLY : mp_sum
+     USE funct,          ONLY : get_exx_fraction, get_exx_lr_fraction, get_igcx !@WC
 
      IMPLICIT NONE
      REAL(DP) :: exx_divergence
@@ -2329,6 +2345,11 @@ MODULE exx
 
      INTEGER :: nqq, iq
      REAL(DP) :: aa, dq
+     INTEGER :: igcx !@WC
+
+     igcx = get_igcx() !@WC
+     exxalfa = get_exx_fraction() !
+     exxbeta = get_exx_lr_fraction() !
 
      CALL start_clock ('exx_div')
 
@@ -2369,8 +2390,15 @@ MODULE exx
                  IF (.not.on_double_grid) THEN
                     IF ( qq > 1.d-8 ) THEN
                        IF ( erfc_scrlen > 0 ) THEN
-                          div = div + exp( -alpha * qq) / qq * &
+                          IF (igcx == 29) THEN !@WC
+                             IF (exxalfa == 0) exxalfa = 0.0001_DP
+                             div = div + exp(-alpha*qq)/qq* &
+                                (1.0_dp+exp(-qq*tpiba2/4.0/erfc_scrlen**2)*exxbeta/exxalfa)*&
+                                grid_factor
+                          ELSE
+                            div = div + exp( -alpha * qq) / qq * &
                                 (1._dp-exp(-qq*tpiba2/4.d0/erfc_scrlen**2)) * grid_factor
+                          ENDIF
                        ELSEIF ( erf_scrlen >0 ) THEN
                           div = div + exp( -alpha * qq) / qq * &
                                 (exp(-qq*tpiba2/4.d0/erf_scrlen**2)) * grid_factor
@@ -2410,7 +2438,12 @@ MODULE exx
         q_ = dq * (iq+0.5d0)
         qq = q_ * q_
         IF ( erfc_scrlen > 0 ) THEN
-           aa = aa  -exp( -alpha * qq) * exp(-qq/4.d0/erfc_scrlen**2) * dq
+           IF (igcx == 29) THEN !@WC
+             IF (exxalfa == 0) exxalfa = 0.0001_DP
+             aa = aa + exp(-alpha*qq)*exp(-qq/4.0/erfc_scrlen**2)*exxbeta/exxalfa*dq
+           ELSE
+             aa = aa  -exp( -alpha * qq) * exp(-qq/4.d0/erfc_scrlen**2) * dq
+           ENDIF
         ELSEIF ( erf_scrlen > 0 ) THEN
            aa = 0._dp
         ELSE
@@ -2452,6 +2485,7 @@ MODULE exx
     USE fft_base,             ONLY : dffts
     USE fft_interfaces,       ONLY : fwfft, invfft
     USE uspp,                 ONLY : okvan
+    USE funct,                ONLY : get_igcx, get_exx_fraction, get_exx_lr_fraction !@WC
     !
     ! ---- local variables -------------------------------------------------
     !
@@ -2472,6 +2506,11 @@ MODULE exx
     REAL(DP) :: qq, xk_cryst(3), sxk(3), xkq(3), vc(3,3), x, q(3)
     ! temp array for vcut_spheric
     REAL(DP) :: delta(3,3)
+    INTEGER  :: igcx !@WC
+
+    igcx = get_igcx() !@WC
+    exxalfa = get_exx_fraction() !
+    exxbeta = get_exx_lr_fraction() !
 
     CALL start_clock ('exx_stress')
 
@@ -2583,10 +2622,15 @@ MODULE exx
 
                   ELSEIF (qq > 1.d-8) THEN
                       IF ( erfc_scrlen > 0 ) THEN
-                        fac(ig)=e2*fpi/qq*(1._dp-exp(-qq/4.d0/erfc_scrlen**2)) * grid_factor
-                        fac_stress(ig) = -e2*fpi * 2.d0/qq**2 * ( &
-                            (1._dp+qq/4.d0/erfc_scrlen**2)*exp(-qq/4.d0/erfc_scrlen**2) - 1._dp) * &
-                            grid_factor
+                         IF ( igcx == 29 ) THEN !@WC: CAM
+                            !TODO fac_stress(ig)
+                            fac(ig)=e2*fpi/qq*(1._dp+exp(-qq/4.d0/erfc_scrlen**2)*exxbeta/exxalfa)*grid_factor
+                         ELSE
+                            fac(ig)=e2*fpi/qq*(1._dp-exp(-qq/4.d0/erfc_scrlen**2)) * grid_factor
+                            fac_stress(ig) = -e2*fpi * 2.d0/qq**2 * ( &
+                                (1._dp+qq/4.d0/erfc_scrlen**2)*exp(-qq/4.d0/erfc_scrlen**2) - 1._dp) * &
+                                grid_factor
+                         ENDIF
                       ELSE
                         fac(ig)=e2*fpi/( qq + yukawa ) * grid_factor
                         fac_stress(ig) = 2.d0 * e2*fpi/(qq+yukawa)**2 * grid_factor

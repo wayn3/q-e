@@ -614,7 +614,7 @@ CONTAINS
     !
     !------------------------------------------------------------------------
     SUBROUTINE qexsd_init_dft(obj, functional, root_is_output, dft_is_hybrid, nqx1, nqx2, nqx3, ecutfock,       &
-                   exx_fraction, screening_parameter, exxdiv_treatment, x_gamma_extrapolation, ecutvcut,        &
+                   exx_fraction, exx_lr_fraction, screening_parameter, exxdiv_treatment, x_gamma_extrapolation, ecutvcut,        & !@WC
                    dft_is_lda_plus_U, lda_plus_U_kind, llmax, noncolin, nspin, nsp, ldim, nat, species, ityp,   &
                    Hubbard_U, Hubbard_J0, Hubbard_alpha, Hubbard_beta, Hubbard_J, starting_ns, Hubbard_ns,      &
                    Hubbard_ns_nc, U_projection_type, dft_is_vdW, vdw_corr, nonlocal_term, london_s6, london_c6, &
@@ -630,7 +630,7 @@ CONTAINS
       LOGICAL,          INTENT(IN) :: root_is_output
       INTEGER,          INTENT(IN) :: nqx1, nqx2, nqx3
       REAL(DP),         INTENT(IN) :: ecutfock
-      REAL(DP),         INTENT(IN) :: exx_fraction
+      REAL(DP),         INTENT(IN) :: exx_fraction, exx_lr_fraction !@WC
       REAL(DP),         INTENT(IN) :: screening_parameter
       CHARACTER(len=*), INTENT(IN) :: exxdiv_treatment
       LOGICAL,          INTENT(IN) :: x_gamma_extrapolation
@@ -696,7 +696,7 @@ CONTAINS
           !
           CALL qes_init_qpoint_grid(qpoint_grid, "qpoint_grid", nqx1, nqx2, nqx3, "")
           !
-          CALL qes_init_hybrid(hybrid, "hybrid", qpoint_grid, ecutfock, exx_fraction, &
+          CALL qes_init_hybrid(hybrid, "hybrid", qpoint_grid, ecutfock, exx_fraction, exx_lr_fraction, & !@WC
                                screening_parameter, exxdiv_treatment, x_gamma_extrapolation, ecutvcut)
           !
           CALL qes_reset_qpoint_grid(qpoint_grid)

@@ -94,7 +94,7 @@ MODULE pw_restart_new
       USE mp_bands,             ONLY : nproc_bgrp, me_bgrp, root_bgrp, &
                                        intra_bgrp_comm, nbgrp, ntask_groups
       USE mp_diag,              ONLY : nproc_ortho
-      USE funct,                ONLY : get_exx_fraction, dft_is_hybrid, &
+      USE funct,                ONLY : get_exx_fraction, get_exx_lr_fraction, dft_is_hybrid, & !@WC
                                        get_gau_parameter, &
                                        get_screening_parameter, exx_is_active
       USE exx,                  ONLY : x_gamma_extrapolation, nq1, nq2, nq3, &
@@ -289,7 +289,8 @@ MODULE pw_restart_new
          vdw_corr_ = vdw_corr
          IF ( london ) vdw_corr_ = 'grimme-d2'
          CALL qexsd_init_dft(output%dft, dft_name, .TRUE., dft_is_hybrid(), nq1, nq2, nq3, ecutfock, &
-              get_exx_fraction(), get_screening_parameter(), exxdiv_treatment, x_gamma_extrapolation,&
+              get_exx_fraction(), get_exx_lr_fraction(), &  !@WC
+              get_screening_parameter(), exxdiv_treatment, x_gamma_extrapolation,&
               ecutvcut, lda_plus_u, lda_plus_u_kind, 2*Hubbard_lmax+1, noncolin, nspin, nsp,         &
               2*Hubbard_lmax+1, nat, atm, ityp, Hubbard_U, Hubbard_J0, Hubbard_alpha, Hubbard_beta,  &
               Hubbard_J, starting_ns_eigenvalue, rho%ns, rho%ns_nc, U_projection, dft_is_nonlocc(),  &
@@ -2176,7 +2177,8 @@ MODULE pw_restart_new
     !------------------------------------------------------------------------
       ! 
       USE funct,                ONLY : set_exx_fraction, set_screening_parameter, &
-                                      set_gau_parameter, enforce_input_dft, start_exx
+                                       set_gau_parameter, enforce_input_dft, start_exx, &
+                                       set_exx_lr_fraction !@WC
       USE exx,                  ONLY : x_gamma_extrapolation, nq1, nq2, nq3, &
                                        exxdiv_treatment, yukawa, ecutvcut, ecutfock
       ! 

@@ -28,8 +28,7 @@ MODULE qexml_module
   ! in the root directory of the present distribution,
   ! or http://www.gnu.org/copyleft/gpl.txt .
   !
-#if ! defined(__XSD)
-  !
+#if ! defined(__XSD) 
   USE iotk_module
   USE kinds, ONLY : DP
   IMPLICIT NONE
@@ -1448,6 +1447,7 @@ CONTAINS
     !------------------------------------------------------------------------
     SUBROUTINE qexml_write_exx( x_gamma_extrapolation, nqx1, nqx2, nqx3, &
                           exxdiv_treatment, yukawa, ecutvcut, exx_fraction, &
+                          exx_lr_fraction, & !@WC
                           gau_parameter, screening_parameter, exx_is_active, ecutfock )
       !------------------------------------------------------------------------
       !
@@ -1455,6 +1455,7 @@ CONTAINS
       INTEGER,            INTENT(IN) :: nqx1, nqx2, nqx3
       CHARACTER(LEN=*),   INTENT(IN) :: exxdiv_treatment
       REAL(DP),           INTENT(IN) :: yukawa, ecutvcut, exx_fraction, ecutfock
+      REAL(DP),           INTENT(IN) :: exx_lr_fraction !@WC
       REAL(DP),           INTENT(IN) :: screening_parameter
       REAL(DP),           INTENT(IN) :: gau_parameter
       !
@@ -1467,6 +1468,7 @@ CONTAINS
       call iotk_write_dat(ounit, "yukawa", yukawa)
       call iotk_write_dat(ounit, "ecutvcut", ecutvcut)
       call iotk_write_dat(ounit, "exx_fraction", exx_fraction)
+      call iotk_write_dat(ounit, "exx_lr_fraction", exx_lr_fraction)
       call iotk_write_dat(ounit, "screening_parameter", screening_parameter)
       call iotk_write_dat(ounit, "gau_parameter", gau_parameter)
       call iotk_write_dat(ounit, "exx_is_active", exx_is_active)
@@ -3023,6 +3025,7 @@ CONTAINS
     !------------------------------------------------------------------------
     SUBROUTINE qexml_read_exx( x_gamma_extrapolation, nqx1, nqx2, nqx3, &
                           exxdiv_treatment, yukawa, ecutvcut, exx_fraction, &
+                          exx_lr_fraction, & !@WC
                           screening_parameter, gau_parameter, exx_is_active, ecutfock, &
                           found, ierr )
       !----------------------------------------------------------------------
@@ -3033,6 +3036,7 @@ CONTAINS
       INTEGER,          OPTIONAL, INTENT(OUT) :: nqx1, nqx2, nqx3
       CHARACTER(LEN=*), OPTIONAL, INTENT(OUT) :: exxdiv_treatment
       REAL(DP),         OPTIONAL, INTENT(OUT) :: yukawa, ecutvcut, exx_fraction
+      REAL(DP),         OPTIONAL, INTENT(OUT) :: exx_lr_fraction !@WC
       REAL(DP),         OPTIONAL, INTENT(OUT) :: screening_parameter, ecutfock
       REAL(DP),         OPTIONAL, INTENT(OUT) :: gau_parameter
       LOGICAL,                    INTENT(out) :: found
@@ -3041,6 +3045,7 @@ CONTAINS
       LOGICAL  :: x_gamma_extrapolation_, exx_is_active_
       INTEGER  :: nqx1_, nqx2_, nqx3_
       REAL(DP) :: yukawa_, ecutvcut_, exx_fraction_
+      REAL(DP) :: exx_lr_fraction_ !@WC
       REAL(DP) :: screening_parameter_, ecutfock_
       REAL(DP) :: gau_parameter_
       CHARACTER(LEN=80) :: exxdiv_treatment_
@@ -3075,6 +3080,9 @@ CONTAINS
       call iotk_scan_dat(iunit, "exx_fraction", exx_fraction_, IERR=ierr)
       IF ( ierr /= 0 ) RETURN
       !
+      call iotk_scan_dat(iunit, "exx_lr_fraction", exx_lr_fraction_, IERR=ierr) !@WC
+      IF ( ierr /= 0 ) RETURN
+      !
       call iotk_scan_dat(iunit, "screening_parameter", screening_parameter_, IERR=ierr)
       IF ( ierr /= 0 ) RETURN
       !
@@ -3103,6 +3111,7 @@ CONTAINS
       IF ( present(yukawa) )                               yukawa = yukawa_
       IF ( present(ecutvcut) )                           ecutvcut = ecutvcut_
       IF ( present(exx_fraction) )                   exx_fraction = exx_fraction_
+      IF ( present(exx_lr_fraction) )             exx_lr_fraction = exx_lr_fraction_ !@WC
       IF ( present(screening_parameter) )     screening_parameter = screening_parameter_
       IF ( present(ecutfock) )                           ecutfock = ecutfock_
       IF ( present(gau_parameter) )                 gau_parameter = gau_parameter_

@@ -5278,6 +5278,9 @@ SUBROUTINE qes_write_hybrid(iun, obj)
       CALL iotk_write_begin(iun, 'exx_fraction')
          WRITE(iun, '(E24.16)') obj%exx_fraction
       CALL iotk_write_end(iun, 'exx_fraction')
+      CALL iotk_write_begin(iun, 'exx_lr_fraction') !@WC
+         WRITE(iun, '(E20.7)') obj%exx_lr_fraction  !
+      CALL iotk_write_end(iun, 'exx_lr_fraction')   !
       CALL iotk_write_begin(iun, 'screening_parameter')
          WRITE(iun, '(E24.16)') obj%screening_parameter
       CALL iotk_write_end(iun, 'screening_parameter')
@@ -5298,7 +5301,7 @@ SUBROUTINE qes_write_hybrid(iun, obj)
    !
 END SUBROUTINE qes_write_hybrid
 
-SUBROUTINE qes_init_hybrid(obj, tagname, qpoint_grid, ecutfock, exx_fraction, &
+SUBROUTINE qes_init_hybrid(obj, tagname, qpoint_grid, ecutfock, exx_fraction, exx_lr_fraction, & !@WC
                               screening_parameter, exxdiv_treatment, x_gamma_extrapolation, &
                               ecutvcut)
    IMPLICIT NONE
@@ -5308,7 +5311,7 @@ SUBROUTINE qes_init_hybrid(obj, tagname, qpoint_grid, ecutfock, exx_fraction, &
    INTEGER  :: i
    TYPE(qpoint_grid_type) :: qpoint_grid
    REAL(DP) :: ecutfock
-   REAL(DP) :: exx_fraction
+   REAL(DP) :: exx_fraction, exx_lr_fraction !@WC
    REAL(DP) :: screening_parameter
    CHARACTER(len=*) :: exxdiv_treatment
    LOGICAL  :: x_gamma_extrapolation
@@ -5318,6 +5321,7 @@ SUBROUTINE qes_init_hybrid(obj, tagname, qpoint_grid, ecutfock, exx_fraction, &
    obj%qpoint_grid = qpoint_grid
    obj%ecutfock = ecutfock
    obj%exx_fraction = exx_fraction
+   obj%exx_lr_fraction = exx_lr_fraction !@WC
    obj%screening_parameter = screening_parameter
    obj%exxdiv_treatment = exxdiv_treatment
    obj%x_gamma_extrapolation = x_gamma_extrapolation

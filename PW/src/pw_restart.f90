@@ -147,7 +147,8 @@ MODULE pw_restart
       USE mp_diag,              ONLY : nproc_ortho
       USE funct,                ONLY : get_exx_fraction, dft_is_hybrid, &
                                        get_gau_parameter, &
-                                       get_screening_parameter, exx_is_active
+                                       get_screening_parameter, exx_is_active, &
+                                       get_exx_lr_fraction !@WC
       USE exx,                  ONLY : x_gamma_extrapolation, nq1, nq2, nq3, &
                                        exxdiv_treatment, yukawa, ecutvcut, ecutfock
       USE cellmd,               ONLY : lmovecell, cell_factor 
@@ -426,7 +427,7 @@ MODULE pw_restart
          IF ( dft_is_hybrid() ) CALL qexml_write_exx &
                        ( x_gamma_extrapolation, nq1, nq2, nq3, &
                          exxdiv_treatment, yukawa, ecutvcut, &
-                         get_exx_fraction(), get_gau_parameter(), &
+                         get_exx_fraction(), get_exx_lr_fraction(), get_gau_parameter(), & !@WC
                          get_screening_parameter(), exx_is_active(), ecutfock )
          !
 !-------------------------------------------------------------------------------
@@ -2639,7 +2640,8 @@ MODULE pw_restart
       !
       ! ... read EXX variables
       !
-      USE funct,                ONLY : set_exx_fraction, set_screening_parameter, &
+      USE funct,                ONLY : set_exx_fraction, set_exx_lr_fraction, & !@WC
+                                       set_screening_parameter, &
                                        set_gau_parameter, enforce_input_dft, start_exx
       USE exx,                  ONLY : x_gamma_extrapolation, nq1, nq2, nq3, &
                                        exxdiv_treatment, yukawa, ecutvcut, ecutfock
@@ -2647,13 +2649,15 @@ MODULE pw_restart
       !
       INTEGER,          INTENT(OUT) :: ierr
       REAL(DP) :: exx_fraction, screening_parameter, gau_parameter
+      REAL(DP) :: exx_lr_fraction !@WC
       LOGICAL :: exx_is_active, found
       !
       IF ( ionode ) THEN
          CALL qexml_read_exx( X_GAMMA_EXTRAPOLATION=x_gamma_extrapolation, &
               NQX1=nq1, NQX2=nq2, NQX3=nq3, EXXDIV_TREATMENT=exxdiv_treatment, &
               YUKAWA = yukawa, ECUTVCUT=ecutvcut, EXX_FRACTION=exx_fraction, &
-              SCREENING_PARAMETER=screening_parameter, GAU_PARAMETER=gau_parameter, &
+              EXX_LR_FRACTION=exx_lr_fraction, SCREENING_PARAMETER=screening_parameter, & !@WC
+              GAU_PARAMETER=gau_parameter, &
               EXX_IS_ACTIVE=exx_is_active, ECUTFOCK=ecutfock, FOUND=found, IERR=ierr )
          !
       ENDIF
@@ -2673,12 +2677,14 @@ MODULE pw_restart
       CALL mp_bcast( yukawa, ionode_id, intra_image_comm )
       CALL mp_bcast( ecutvcut, ionode_id, intra_image_comm )
       CALL mp_bcast( exx_fraction, ionode_id, intra_image_comm )
+      CALL mp_bcast( exx_lr_fraction, ionode_id, intra_image_comm ) !@WC
       CALL mp_bcast( screening_parameter, ionode_id, intra_image_comm )
       CALL mp_bcast( gau_parameter, ionode_id, intra_image_comm )
       CALL mp_bcast( exx_is_active, ionode_id, intra_image_comm )
       CALL mp_bcast( ecutfock, ionode_id, intra_image_comm )
       !
       CALL set_exx_fraction(exx_fraction)
+      CALL set_exx_lr_fraction(exx_lr_fraction) !@WC
       CALL set_screening_parameter(screening_parameter)
       CALL set_gau_parameter(gau_parameter)
       IF (exx_is_active) CALL start_exx( ) 

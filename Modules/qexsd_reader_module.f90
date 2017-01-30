@@ -415,7 +415,7 @@ INTEGER                        :: ierr, sum_err
 INTEGER                        :: nqx1_, nqx2_, nqx3_ 
 TYPE (qpoint_grid_type)        :: qgrid_obj
 REAL(DP)                       :: ecutfock_, exx_fraction_, screening_parameter_, &
-                                  ecutvcut_
+                                  ecutvcut_, exx_lr_fraction_ !@WC
 LOGICAL                        :: x_gamma_extrapolation_
 CHARACTER(LEN=256)             :: exxdiv_treatment_
 CHARACTER(iotk_attlenx)         :: attr
@@ -444,6 +444,8 @@ CALL iotk_scan_dat(iunit, "ecutfock", ecutfock_, IERR = ierr )
 sum_err = sum_err + ierr 
 CALL iotk_scan_dat(iunit, "exx_fraction", exx_fraction_, IERR = ierr )
 sum_err = sum_err + ierr
+CALL iotk_scan_dat(iunit, "exx_lr_fraction", exx_lr_fraction_, IERR = ierr ) !@WC
+sum_err = sum_err + ierr
 CALL iotk_scan_dat(iunit, "screening_parameter", screening_parameter_, IERR = ierr )
 sum_err = sum_err + ierr
 CALL iotk_scan_dat(iunit, "exxdiv_treatment", exxdiv_treatment_, IERR = ierr )
@@ -456,8 +458,8 @@ IF (sum_err /= 0 ) RETURN
 CALL iotk_scan_end(iunit, "hybrid", IERR = ierr ) 
 IF (ierr /=0) RETURN
 !
-CALL qes_init_hybrid(obj, "hybrid", qgrid_obj, ecutfock_, exx_fraction_, screening_parameter_, &
-                     exxdiv_treatment_, x_gamma_extrapolation_, ecutvcut_) 
+CALL qes_init_hybrid(obj, "hybrid", qgrid_obj, ecutfock_, exx_fraction_, exx_lr_fraction_, screening_parameter_, &
+                     exxdiv_treatment_, x_gamma_extrapolation_, ecutvcut_) !@WC
 !
 CALL qes_reset_qpoint_grid( qgrid_obj ) 
 

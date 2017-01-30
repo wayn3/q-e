@@ -22,7 +22,8 @@ SUBROUTINE iosys()
   USE kinds,         ONLY : DP
   USE funct,         ONLY : dft_is_hybrid, dft_has_finite_size_correction, &
                             set_finite_size_volume, get_inlc 
-  USE funct,         ONLY: set_exx_fraction, set_screening_parameter
+  USE funct,         ONLY: set_exx_fraction, set_screening_parameter, &
+                           set_exx_lr_fraction !@WC
   USE control_flags, ONLY: adapt_thr, tr2_init, tr2_multi
   USE constants,     ONLY : autoev, eV_to_kelvin, pi, rytoev, &
                             ry_kbar, amu_ry, bohr_radius_angs, eps8
@@ -239,7 +240,7 @@ SUBROUTINE iosys()
                                x_gamma_extrapolation, nqx1, nqx2, nqx3,     &
                                exxdiv_treatment, yukawa, ecutvcut,          &
                                exx_fraction, screening_parameter, ecutfock, &
-                               gau_parameter,                               &
+                               gau_parameter, exx_lr_fraction,              &!@WC
                                edir, emaxpos, eopreg, eamp, noncolin, lambda, &
                                angle1, angle2, constrained_magnetization,     &
                                B_field, fixed_magnetization, report, lspinorb,&
@@ -1541,6 +1542,7 @@ SUBROUTINE iosys()
   ! ... or else the two following parameters will be overwritten
   !
   IF (exx_fraction >= 0.0_DP) CALL set_exx_fraction (exx_fraction)
+  IF (exx_lr_fraction /= 0.0_DP) CALL set_exx_lr_fraction (exx_lr_fraction) !@WC
   IF (screening_parameter >= 0.0_DP) &
         & CALL set_screening_parameter (screening_parameter)
   !

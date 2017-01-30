@@ -415,6 +415,7 @@ MODULE input_parameters
           ! 
           !
         REAL(DP) :: exx_fraction = -1.0_DP      ! if negative, use defaults
+        REAL(DP) :: exx_lr_fraction = -1.0_DP    !@WC
         REAL(DP) :: screening_parameter = -1.0_DP
         INTEGER  :: nqx1 = 0, nqx2 = 0, nqx3=0  ! use the same values as nk1, nk2, nk3
         !gau-pbe in
@@ -594,7 +595,7 @@ MODULE input_parameters
              U_projection_type, input_dft, la2F, assume_isolated,             &
              nqx1, nqx2, nqx3, ecutfock,                                      &
              exxdiv_treatment, x_gamma_extrapolation, yukawa, ecutvcut,       &
-             exx_fraction, screening_parameter, ref_alat,                     &
+             exx_fraction, exx_lr_fraction, screening_parameter, ref_alat,    & !@WC
              noncolin, lspinorb, starting_spin_angle, lambda, angle1, angle2, &
              report, lforcet,                                                 &
              constrained_magnetization, B_field, fixed_magnetization,         &

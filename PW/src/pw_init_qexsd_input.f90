@@ -23,7 +23,8 @@
                                 angle1, angle2, ip_nat => nat, ip_nspin => nspin, ip_ityp => sp_pos, ip_tau => rd_pos,&
                                 ip_atomic_positions => atomic_positions, lspinorb, ip_nqx1 => nqx1, ip_nqx2 => nqx2,  &
                                 ip_nqx3 => nqx3, ip_ecutfock => ecutfock, ip_ecutvcut => ecutvcut,                    &
-                                screening_parameter, exx_fraction, x_gamma_extrapolation, exxdiv_treatment,           &
+                                screening_parameter, exx_fraction, exx_lr_fraction,                                   & !@WC
+                                x_gamma_extrapolation, exxdiv_treatment,                                              &
                                 ip_lda_plus_u=>lda_plus_u, ip_lda_plus_u_kind => lda_plus_u_kind,                     & 
                                 ip_hubbard_u => hubbard_u, ip_hubbard_j0 => hubbard_j0,                               &
                                 ip_hubbard_beta => hubbard_beta, ip_hubbard_alpha => hubbard_alpha,                   &
@@ -191,7 +192,7 @@
   !
   vdw_corr_ = vdw_corr
   IF ( london ) vdw_corr_ = 'grimme-d2'
-  CALL qexsd_init_dft (obj%dft,TRIM(dft_name),.FALSE., dft_is_hybrid,ip_nqx1,ip_nqx2,ip_nqx3,ip_ecutfock,exx_fraction,&
+  CALL qexsd_init_dft (obj%dft,TRIM(dft_name),.FALSE., dft_is_hybrid,ip_nqx1,ip_nqx2,ip_nqx3,ip_ecutfock,exx_fraction, exx_lr_fraction, & !@WC
                        screening_parameter,exxdiv_treatment, x_gamma_extrapolation, ip_ecutvcut,                      &
                        ip_lda_plus_U,ip_lda_plus_u_kind,2*hubbard_lmax+1, ip_noncolin, ip_nspin,ntyp,0,ip_nat,atm,    &
                        ip_ityp,ip_hubbard_u,ip_hubbard_j0,ip_hubbard_alpha,ip_hubbard_beta,ip_hubbard_j,              &

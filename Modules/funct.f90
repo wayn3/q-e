@@ -1,4 +1,3 @@
-!
 ! Copyright (C) 2004-2016 Quantum ESPRESSO group
 ! This file is distributed under the terms of the
 ! GNU General Public License. See the file `License'
@@ -55,6 +54,8 @@ module funct
   PUBLIC  :: set_exx_fraction
   PUBLIC  :: set_screening_parameter, get_screening_parameter
   PUBLIC  :: set_gau_parameter, get_gau_parameter
+  PUBLIC  :: get_exx_lr_fraction, set_exx_lr_fraction !@WC
+
 
   ! additional subroutines/functions for finite size corrections
   PUBLIC  :: dft_has_finite_size_correction, set_finite_size_volume
@@ -76,6 +77,7 @@ module funct
   PRIVATE :: discard_input_dft
   PRIVATE :: isgradient, ismeta, ishybrid
   PRIVATE :: exx_fraction, exx_started
+  PRIVATE :: exx_lr_fraction !@WC
   PRIVATE :: has_finite_size_correction, &
              finite_size_cell_volume,  finite_size_cell_volume_set 
   !
@@ -240,7 +242,7 @@ module funct
   !              revPBE  Zhang and Yang, PRL 80, 890 (1998)
   !              pbesol  J.P. Perdew et al., PRL 100, 136406 (2008)
   !              q2d     L. Chiodo et al., PRL 108, 126402 (2012)
-  !              rw86    Eamonn D. Murray et al, J. Chem. Theory Comput. 5, 2754 (2009) 
+  !              rw86    Eamonn D. Murray et al, J. Chem. Theory comp. 5, 2754 (2009) 
   !              wc      Z. Wu and R. E. Cohen, PRB 73, 235116 (2006)
   !              kzk     H.Kwee, S. Zhang, H. Krakauer, PRL 100, 126404 (2008)
   !              pbe0    J.P.Perdew, M. Ernzerhof, K.Burke, JCP 105, 9982 (1996)
@@ -285,7 +287,7 @@ module funct
   !    igcx:  type of gradient correction on exchange
   !    igcc:  type of gradient correction on correlation
   !    inlc:  type of non local correction on correlation
-  !    imeta: type of meta-GGA
+  !    imeta:  type of meta-GGA
   integer :: iexch = notset
   integer :: icorr = notset
   integer :: igcx  = notset
@@ -294,6 +296,7 @@ module funct
   integer :: inlc  = notset
   !
   real(DP):: exx_fraction = 0.0_DP
+  real(DP):: exx_lr_fraction = 0.0_DP !@WC
   real(DP):: screening_parameter = 0.0_DP
   real(DP):: gau_parameter = 0.0_DP
   logical :: islda       = .false.
@@ -307,19 +310,19 @@ module funct
   real(DP):: finite_size_cell_volume = notset
   logical :: discard_input_dft = .false.
   !
-  integer, parameter:: nxc=8, ncc=10, ngcx=27, ngcc=12, nmeta=3, ncnl=6
+  integer, parameter:: nxc=10, ncc=10, ngcx=29, ngcc=12, nmeta=3, ncnl=6 !@WC
   character (len=4) :: exc, corr, gradx, gradc, meta, nonlocc
   dimension :: exc (0:nxc), corr (0:ncc), gradx (0:ngcx), gradc (0:ngcc), &
                meta(0:nmeta), nonlocc (0:ncnl)
 
-  data exc  / 'NOX', 'SLA', 'SL1', 'RXC', 'OEP', 'HF', 'PB0X', 'B3LP', 'KZK' /
+  data exc  / 'NOX', 'SLA', 'SL1', 'RXC', 'OEP', 'HF', 'PB0X', 'B3LP', 'KZK', 'xxxx', 'CAM' / !@WC
   data corr / 'NOC', 'PZ', 'VWN', 'LYP', 'PW', 'WIG', 'HL', 'OBZ', &
               'OBW', 'GL' , 'KZK' /
 
   data gradx / 'NOGX', 'B88', 'GGX', 'PBX',  'RPB', 'HCTH', 'OPTX',&
                'xxxx', 'PB0X', 'B3LP','PSX', 'WCX', 'HSE', 'RW86', 'PBE', &
                'xxxx', 'C09X', 'SOX', 'xxxx', 'Q2DX', 'GAUP', 'PW86', 'B86B', &
-               'OBK8', 'OB86', 'EVX', 'B86R', 'CX13' / 
+               'OBK8', 'OB86', 'EVX', 'B86R', 'CX13', 'xxxx', 'CAM' /  !@WC
 
   data gradc / 'NOGC', 'P86', 'GGC', 'BLYP', 'PBC', 'HCTH', 'NONE',&
                'B3LP', 'PSC', 'PBE', 'xxxx', 'xxxx', 'Q2DC' / 
@@ -466,6 +469,10 @@ CONTAINS
    else if ('HSE' .EQ. TRIM( dftout) ) then
     ! special case : HSE
        dft_defined = set_dft_values(1,4,12,4,0,0)
+
+   else if ('CAM' .EQ. TRIM( dftout) ) then !@WC
+    ! special case : CAM
+       dft_defined = set_dft_values(10,4,29,4,0,0)
 
    else if ( 'GAUP' .EQ. TRIM(dftout) .OR. 'GAUPBE' .EQ. TRIM(dftout) ) then
     ! special case : GAUPBE
@@ -671,6 +678,12 @@ CONTAINS
        exx_fraction = 0.25_DP
        screening_parameter = 0.106_DP
     END IF
+    !@WC:CAM
+    if ( igcx == 29 ) THEN
+        exx_fraction = 0.20_DP
+        exx_lr_fraction = 0.0_DP
+        screening_parameter = 0.0_DP
+    END IF
     ! gau-pbe
     IF ( igcx ==20 ) THEN
        exx_fraction = 0.24_DP
@@ -794,6 +807,13 @@ CONTAINS
      write (stdout,'(5x,a,f6.2)') 'EXX fraction changed: ',exx_fraction
   end subroutine set_exx_fraction
   !---------------------------------------------------------------------
+  subroutine set_exx_lr_fraction (exxf_) !@WC
+     implicit none
+     real(DP):: exxf_
+     exx_lr_fraction = exxf_
+     write (stdout,'(5x,a,f6.3)') 'EXX fraction(lr) changed: ',exx_lr_fraction
+  end subroutine set_exx_lr_fraction
+  !---------------------------------------------------------------------
   subroutine set_screening_parameter (scrparm_)
      implicit none
      real(DP):: scrparm_
@@ -875,6 +895,12 @@ CONTAINS
      get_exx_fraction = exx_fraction
      return
   end function get_exx_fraction
+  !-----------------------------------------------------------------------
+  function get_exx_lr_fraction () !@WC
+     real(DP):: get_exx_lr_fraction
+     get_exx_lr_fraction = exx_lr_fraction
+     return
+  end function get_exx_lr_fraction
   !-----------------------------------------------------------------------
   function get_dft_name ()
      character (len=25) :: get_dft_name
@@ -990,6 +1016,8 @@ CONTAINS
      shortname = 'Q2D'
   else if (iexch==1.and.icorr==4.and.igcx==12.and.igcc==4) then
      shortname = 'HSE'
+  else if (iexch==10.and.icorr==4.and.igcx==29.and.igcc==4) then !@WC
+     shortname = 'CAM' !
   else if (iexch==1.and.icorr==4.and.igcx==20.and.igcc==4) then
      shortname = 'GAUPBE'
   else if (iexch==1.and.icorr==4.and.igcx==11.and.igcc==4) then
@@ -1068,6 +1096,10 @@ subroutine write_dft_name
         &  " (",I2,3I3,2I2,")")') TRIM( dft ), iexch,icorr,igcx,igcc,inlc,imeta
    IF ( get_exx_fraction() > 0.0_dp ) WRITE( stdout, &
         '(5X,"EXX-fraction              =",F12.2)') get_exx_fraction()
+   IF ( get_exx_lr_fraction() > 0.0_dp ) WRITE( stdout, & !@WC
+        '(5X,"EXX fraction(lr)          =",F12.3)') get_exx_lr_fraction() !
+   IF ( get_screening_parameter() > 0.0_dp ) WRITE( stdout, & !@WC
+        '(5X,"Screening parameter       =",F12.3)') get_screening_parameter() !
    return
 end subroutine write_dft_name
 
@@ -1154,6 +1186,12 @@ subroutine xc (rho, ex, ec, vx, vc)
      if (exx_started) then
         ex = 0.782_DP * ex 
         vx = 0.782_DP * vx 
+     end if
+  ELSEIF (iexch == 10) THEN         ! @WC: 'CAM'
+     CALL slater(rs, ex, vx)
+     if (exx_started) then
+        ex = (1.0_DP - exx_fraction - exx_lr_fraction)*ex
+        vx = (1.0_DP - exx_fraction - exx_lr_fraction)*vx
      end if
   else
      ex = 0.0_DP
@@ -1274,6 +1312,13 @@ subroutine xc_spin (rho, zeta, ex, ec, vxup, vxdw, vcup, vcdw)
         vxup = 0.8_DP * vxup 
         vxdw = 0.8_DP * vxdw 
      end if
+  ELSEIF (iexch == 10) THEN ! @WC: CAM
+     call slater_spin (rho, zeta, ex, vxup, vxdw)
+     if (exx_started) then
+        ex   = (1.0_DP - exx_fraction - exx_lr_fraction) * ex
+        vxup = (1.0_DP - exx_fraction - exx_lr_fraction) * vxup
+        vxdw = (1.0_DP - exx_fraction - exx_lr_fraction) * vxdw
+     end if
   ELSE
      ex = 0.0_DP
      vxup = 0.0_DP
@@ -1369,6 +1414,11 @@ subroutine xc_spin_vec (rho, zeta, length, evx, evc)
      call slater_spin_vec (rho, zeta, evx, length)
      if (exx_started) then
         evx = 0.8_DP * evx
+     end if
+  case(10)           ! @WC: CAM
+     call slater_spin_vec (rho, zeta, evx, length)
+     if (exx_started) then
+        evx = (1.0_DP - exx_fraction - exx_lr_fraction) * evx
      end if
   case default
      evx = 0.0_DP
@@ -1484,6 +1534,14 @@ subroutine gcxc (rho, grho, sx, sc, v1x, v2x, v1c, v2c)
        v1x = v1x - exx_fraction * v1xsr
        v2x = v2x - exx_fraction * v2xsr
      endif 
+  elseif (igcx ==29) then !@WC: 'cam'
+     call pbex (rho, grho, 1, sx, v1x, v2x)
+     if(exx_started) then
+       call pbexsr (rho, grho, sxsr, v1xsr, v2xsr, screening_parameter)
+       sx  = (1.0_DP-exx_fraction-exx_lr_fraction)*sx  + exx_lr_fraction*sxsr
+       v1x = (1.0_DP-exx_fraction-exx_lr_fraction)*v1x + exx_lr_fraction*v1xsr
+       v2x = (1.0_DP-exx_fraction-exx_lr_fraction)*v2x + exx_lr_fraction*v2xsr
+     endif
   elseif (igcx ==13) then ! 'rPW86'
      call rPW86 (rho, grho, sx, v1x, v2x)
   elseif (igcx ==16) then ! 'C09x'
@@ -1645,7 +1703,7 @@ subroutine gcx_spin (rhoup, rhodw, grhoup2, grhodw2, &
      v2xup = 2.0_DP * v2xup
      v2xdw = 2.0_DP * v2xdw
   elseif (igcx == 3 .or. igcx == 4 .or. igcx == 8 .or. &
-          igcx == 10 .or. igcx == 12 .or. igcx == 20 .or. igcx == 25) then
+          igcx == 10 .or. igcx == 12 .or. igcx == 20 .or. igcx == 25 .or. igcx == 29) then !@WC
      ! igcx=3: PBE, igcx=4: revised PBE, igcx=8: PBE0, igcx=10: PBEsol
      ! igcx=12: HSE,  igcx=20: gau-pbe, igcx=25: ev93
      if (igcx == 4) then
@@ -1692,7 +1750,17 @@ subroutine gcx_spin (rhoup, rhodw, grhoup2, grhodw2, &
         v1xdw = v1xdw - exx_fraction*v1xdwsr
         v2xdw = v2xdw - exx_fraction*v2xdwsr
      end if
-
+     !@WC: CAM
+     if (igcx == 29 .and. exx_started ) then
+        call pbexsr_lsd (rhoup, rhodw, grhoup2, grhodw2, sxsr,  &
+                         v1xupsr, v2xupsr, v1xdwsr, v2xdwsr, &
+                         screening_parameter)
+        sx    = (1.0_DP-exx_fraction)*sx    - exx_lr_fraction*(sx-sxsr)
+        v1xup = (1.0_DP-exx_fraction)*v1xup - exx_lr_fraction*(v1xup-v1xupsr)
+        v2xup = (1.0_DP-exx_fraction)*v2xup - exx_lr_fraction*(v2xup-v2xupsr)
+        v1xdw = (1.0_DP-exx_fraction)*v1xdw - exx_lr_fraction*(v1xdw-v1xdwsr)
+        v2xdw = (1.0_DP-exx_fraction)*v2xdw - exx_lr_fraction*(v2xdw-v2xdwsr)
+     end if
      if (igcx == 20 .and. exx_started ) then
         ! gau-pbe
         call pbexgau_lsd (rhoup, rhodw, grhoup2, grhodw2, sxsr,  &
