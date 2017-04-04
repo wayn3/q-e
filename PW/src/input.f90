@@ -191,7 +191,7 @@ SUBROUTINE iosys()
 
   !
   USE symm_base, ONLY : no_t_rev_ => no_t_rev, nofrac, allfrac, &
-                        nosym_ => nosym, nosym_evc_=> nosym_evc
+                        nosym_ => nosym, nosym_evc_=> nosym_evc, spacegroup
   !
   USE bfgs_module,   ONLY : bfgs_ndim_        => bfgs_ndim, &
                             trust_radius_max_ => trust_radius_max, &
@@ -1270,14 +1270,17 @@ SUBROUTINE iosys()
   END SELECT
   IF ( london ) THEN
      CALL infomsg("iosys","london is obsolete, use ""vdw_corr='grimme-d2'"" instead")
+     vdw_corr='grimme-d2'
      llondon = .TRUE.
   END IF
   IF ( xdm ) THEN
      CALL infomsg("iosys","xdm is obsolete, use ""vdw_corr='xdm'"" instead")
+     vdw_corr='xdm'
      lxdm = .TRUE.
   END IF
   IF ( ts_vdw ) THEN
      CALL infomsg("iosys","ts_vdw is obsolete, use ""vdw_corr='TS'"" instead")
+     vdw_corr='TS'
      ts_vdw_ = .TRUE.
   END IF
   IF ( llondon.AND.lxdm .OR. llondon.AND.ts_vdw_ .OR. lxdm.AND.ts_vdw_ ) &
@@ -1311,6 +1314,7 @@ SUBROUTINE iosys()
                                                    &number',1 )
      CALL sup_spacegroup(rd_pos,sp_pos,rd_for,rd_if_pos,space_group,nat,&
               uniqueb,rhombohedral,origin_choice,ibrav_sg)
+     spacegroup = space_group
      IF (ibrav==-1) THEN
         ibrav=ibrav_sg
      ELSEIF (ibrav /= ibrav_sg) THEN
@@ -1564,7 +1568,7 @@ SUBROUTINE iosys()
      ! The next two lines have been moved before the call to read_config_from_file:
      !      at_old    = at
      !      omega_old = omega
-     IF ( cell_factor_ <= 0.D0 ) cell_factor_ = 1.2D0
+     IF ( cell_factor_ <= 0.0_dp ) cell_factor_ = 2.0_dp
      !
      IF ( cmass <= 0.D0 ) &
         CALL errore( 'iosys', &

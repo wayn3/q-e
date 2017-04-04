@@ -205,6 +205,8 @@ module funct
   !              "tpss"   TPSS Meta-GGA                  imeta=1
   !              "m6lx"   M06L Meta-GGA                  imeta=2
   !              "tb09"   TB09 Meta-GGA                  imeta=3
+  !              "+meta"  activate MGGA even without MGGA-XC   imeta=4
+  !              "scan"   SCAN Meta-GGA                  imeta=5
   !
   ! Van der Waals functionals (nonlocal term only)
   !              "nonlc"  none                           inlc =0 (default)
@@ -310,7 +312,7 @@ module funct
   real(DP):: finite_size_cell_volume = notset
   logical :: discard_input_dft = .false.
   !
-  integer, parameter:: nxc=10, ncc=10, ngcx=29, ngcc=12, nmeta=3, ncnl=6 !@WC
+  integer, parameter:: nxc=10, ncc=10, ngcx=29, ngcc=12, nmeta=5, ncnl=6 !@WC
   character (len=4) :: exc, corr, gradx, gradc, meta, nonlocc
   dimension :: exc (0:nxc), corr (0:ncc), gradx (0:ngcx), gradc (0:ngcc), &
                meta(0:nmeta), nonlocc (0:ncnl)
@@ -327,9 +329,14 @@ module funct
   data gradc / 'NOGC', 'P86', 'GGC', 'BLYP', 'PBC', 'HCTH', 'NONE',&
                'B3LP', 'PSC', 'PBE', 'xxxx', 'xxxx', 'Q2DC' / 
 
-  data meta  / 'NONE', 'TPSS', 'M06L', 'TB09' / 
+  data meta  / 'NONE', 'TPSS', 'M06L', 'TB09', 'META', 'SCAN' / 
 
   data nonlocc/'NONE', 'VDW1', 'VDW2', 'VV10', 'VDWX', 'VDWY', 'VDWZ' / 
+
+#ifdef __LIBXC
+  integer :: libxc_major=0, libxc_minor=0, libxc_micro=0
+  public :: libxc_major, libxc_minor, libxc_micro, get_libxc_version
+#endif
 
 CONTAINS
   !-----------------------------------------------------------------------
@@ -428,10 +435,12 @@ CONTAINS
     ! special case : HCTH
     else if ('HCTH'.EQ. TRIM(dftout)) then
        dft_defined = set_dft_values(0,0,5,5,0,0)
+       call errore('set_dft_from_name','HCTH yields suspicious results',1)
               
     ! special case : OLYP = OPTX + LYP
     else if ('OLYP'.EQ. TRIM(dftout)) then
        dft_defined = set_dft_values(0,3,6,3,0,0)
+       call errore('set_dft_from_name','OLYP yields suspicious results',1)
        
     else if ('WC' .EQ. TRIM(dftout) ) then
     ! special case : Wu-Cohen
@@ -552,8 +561,20 @@ CONTAINS
        dft_defined = set_dft_values(0,0,0,0,0,2)
 
     ! special case : TB09 meta-GGA Exc
-    else IF ('TB09'.EQ. TRIM(dftout ) ) THEN
+    else IF ('TB09'.EQ. TRIM(dftout) ) THEN
        dft_defined = set_dft_values(0,0,0,0,0,3)
+ 
+   ! special case : SCAN Meta GGA
+    else if ( 'SCAN' .EQ. TRIM(dftout) ) THEN
+       dft_defined = set_dft_values(0,0,0,0,0,5)
+
+    ! special case : PZ/LDA + null meta-GGA
+    else IF (('PZ+META'.EQ. TRIM(dftout)) .or. ('LDA+META'.EQ. TRIM(dftout)) ) THEN
+       dft_defined = set_dft_values(1,1,0,0,0,4)
+
+    ! special case : PBE + null meta-GGA
+    else IF ('PBE+META'.EQ. TRIM(dftout) ) THEN
+       dft_defined = set_dft_values(1,4,3,4,0,4)
 
     END IF
 
@@ -1042,6 +1063,8 @@ CONTAINS
      shortname = 'M06L'
   else if (imeta == 3) then
      shortname = 'TB09'
+  else if (imeta == 4) then
+     shortname = 'META'
   end if
 
   if ( inlc==1 ) then
@@ -1063,9 +1086,9 @@ CONTAINS
         shortname = 'VDW-DF2-C09'
      else if (iexch==1.and.icorr==4.and.igcx==26.and.igcc==0) then
         shortname = 'VDW-DF2-B86R'
-     else if ( inlc==3) then
-        shortname = 'RVV10'
      end if
+  else if ( inlc==3) then
+     shortname = 'RVV10'
   end if
   !
   get_dft_short = shortname
@@ -1702,14 +1725,18 @@ subroutine gcx_spin (rhoup, rhodw, grhoup2, grhodw2, &
      sx = 0.5_DP * (sxup + sxdw)
      v2xup = 2.0_DP * v2xup
      v2xdw = 2.0_DP * v2xdw
-  elseif (igcx == 3 .or. igcx == 4 .or. igcx == 8 .or. &
-          igcx == 10 .or. igcx == 12 .or. igcx == 20 .or. igcx == 25 .or. igcx == 29) then !@WC
+  elseif (igcx == 3 .or. igcx == 4 .or. igcx == 8 .or. igcx ==10 .or. &
+          igcx ==12 .or. igcx ==20 .or. igcx ==23 .or. igcx ==24 .or. igcx == 25 .or. igcx == 29) then !@WC
      ! igcx=3: PBE, igcx=4: revised PBE, igcx=8: PBE0, igcx=10: PBEsol
-     ! igcx=12: HSE,  igcx=20: gau-pbe, igcx=25: ev93
+     ! igcx=12: HSE,  igcx=20: gau-pbe, igcx=23: obk8, igcx=24: ob86, igcx=25: ev93
      if (igcx == 4) then
         iflag = 2
      elseif (igcx == 10) then
         iflag = 3
+     elseif (igcx == 23) then
+        iflag = 5
+     elseif (igcx == 24) then
+        iflag = 6
      elseif (igcx == 25) then
         iflag = 7
      else
@@ -2434,6 +2461,10 @@ subroutine tau_xc (rho, grho, tau, ex, ec, v1x, v2x, v3x, v1c, v2c, v3c)
      call   m06lxc (rho, grho, tau, ex, ec, v1x, v2x, v3x, v1c, v2c, v3c)
   elseif (imeta == 3) then
      call  tb09cxc (rho, grho, tau, ex, ec, v1x, v2x, v3x, v1c, v2c, v3c)
+  elseif (imeta == 4) then
+     ! do nothing
+  elseif (imeta == 5) then
+     call  SCANcxc (rho, grho, tau, ex, ec, v1x, v2x, v3x, v1c, v2c, v3c)
   else
      call errore('v_xc_meta','wrong igcx and/or igcc',1)
   end if
@@ -3121,6 +3152,21 @@ subroutine evxc_t_vec(rho,rhoc,lsd,length,vxc,exc)
   end if
 
 end subroutine evxc_t_vec
+
+
+#ifdef __LIBXC
+  subroutine get_libxc_version
+     implicit none
+     interface
+        subroutine xc_version(major, minor, micro) bind(c)
+           use iso_c_binding
+           integer(c_int) :: major, minor, micro
+        end subroutine xc_version
+     end interface
+     call xc_version(libxc_major, libxc_minor, libxc_micro)
+  end subroutine get_libxc_version
+#endif
+
 
 end module funct
 

@@ -355,6 +355,9 @@ MODULE extfield
       eopreg,        &! amplitude of the inverse region (0<eopreg<1)
       eamp,          &! field amplitude (in a.u.) (1 a.u. = 51.44 10^11 V/m)
       etotefield,    &! energy correction due to the field
+      el_dipole,     &! electronic_dipole used when dipole correction is on
+      ion_dipole,    &! ionic_dipole      used when dipole correction is on
+      tot_dipole,    &! total dipole      used when dipole correction is on
       ! TB
       zmon,          &! position of monopole plane
       block_1,       &! blocking potential
@@ -414,8 +417,6 @@ MODULE pwcom
   !
   USE constants, ONLY : e2, rytoev, pi, tpi, fpi
   USE cell_base, ONLY : celldm, at, bg, alat, omega, tpiba, tpiba2, ibrav
-  USE gvect
-  USE gvecs
   USE klist
   USE lsda_mod
   USE vlocal
@@ -425,7 +426,6 @@ MODULE pwcom
   USE relax
   USE cellmd
   USE us
-  USE ldaU
   USE extfield
   USE fixed_occ
   USE spin_orb

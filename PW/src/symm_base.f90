@@ -28,13 +28,14 @@ MODULE symm_base
   !
   PUBLIC :: s, sr, sname, ft, ftau, nrot, nsym, nsym_ns, nsym_na, t_rev, &
             no_t_rev, time_reversal, irt, invs, invsym, d1, d2, d3, &
-            allfrac, nofrac, nosym, nosym_evc, fft_fact, remove_sym
+            allfrac, nofrac, nosym, nosym_evc, fft_fact, spacegroup
   INTEGER :: &
        s(3,3,48),            &! symmetry matrices, in crystal axis
        invs(48),             &! index of inverse operation: S^{-1}_i=S(invs(i))
        ftau(3,48),           &! fractional translations, in FFT coordinates
        fft_fact(3),          &! FFT dimensions must be multiple of fft_fact
        nrot,                 &! number of bravais lattice symmetries
+       spacegroup = 0,       &! space group index, as read from input
        nsym = 1,             &! total number of crystal symmetries
        nsym_ns = 0,          &! nonsymmorphic (fractional translation) symms
        nsym_na = 0            ! excluded nonsymmorphic symmetries because
@@ -69,7 +70,7 @@ MODULE symm_base
   ! ... Exported routines
   !
   PUBLIC ::  find_sym, inverse_s, copy_sym, checkallsym, &
-             s_axis_to_cart, set_sym, set_sym_bl, find_sym_ifc
+             s_axis_to_cart, set_sym, set_sym_bl, find_sym_ifc, remove_sym 
   !
 CONTAINS
    !
@@ -110,6 +111,8 @@ SUBROUTINE set_sym_bl ( )
   !
   USE matrix_inversion
   IMPLICIT NONE
+  !
+  CHARACTER(LEN=6), EXTERNAL :: int_to_char
   !
   ! sin3 = sin(pi/3), cos3 = cos(pi/3), msin3 = -sin(pi/3), mcos3 = -cos(pi/3)
   !
@@ -313,8 +316,9 @@ SUBROUTINE set_sym_bl ( )
   IF ( .not. is_group ( nrot ) ) THEN
   !    This happens for instance for an hexagonal lattice with one axis 
   !    oriented at 15 degrees from the x axis, the other along (-1,1,0)
-      WRITE (stdout, '(80("-"),/,"NOTICE: Symmetry group for Bravais lattice &
-     & is not a group - symmetries are disabled",/,80("-"))' )
+      CALL infomsg('set_sym_bl', 'NOTICE: Symmetry group for Bravais lattice &
+      &is not a group (' // TRIM(int_to_char(nrot)) // &
+      &') - symmetries are disabled')
       nrot = 1
   ENDIF
   !

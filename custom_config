@@ -1,0 +1,3 @@
+#!/bin/bash
+
+./configure --with-scalapack=intel CC=icc MPIF90=mpiifort FFLAGS="-O2 -xHOST -assume byterecl -unroll -mkl=sequential" CFLAGS="-O2 -xHOST" SCALAPACK_LIBS="-lmkl_scalapack_lp64 -lmkl_blacs_intelmpi_lp64" LAPACK_LIBS="-lpthread -lm"
