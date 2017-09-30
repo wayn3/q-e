@@ -473,6 +473,7 @@ MODULE qes_types_module
     TYPE(qpoint_grid_type) :: qpoint_grid
     REAL(DP) :: ecutfock
     REAL(DP) :: exx_fraction
+    REAL(DP) :: exx_lr_fraction !@WC
     REAL(DP) :: screening_parameter
     CHARACTER(len=256) :: exxdiv_treatment
     LOGICAL :: x_gamma_extrapolation

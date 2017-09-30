@@ -2348,7 +2348,7 @@ MODULE exx
       ELSEIF (qq > eps_qdiv) THEN
          !
          IF ( erfc_scrlen > 0  ) THEN
-            IF ( igcx == 29 ) THEN
+            IF ( igcx == 41 ) THEN
             !@WC:CAM
                if ( exxalfa == 0._DP) exxalfa = 0.0001_DP
                fac(ig)=e2*fpi/qq*(1._DP+exp(-qq/4._DP/erfc_scrlen**2)*exxbeta/exxalfa)*grid_factor_track(ig)
@@ -3197,7 +3197,7 @@ MODULE exx
                  IF (.not.on_double_grid) THEN
                     IF ( qq > 1.d-8 ) THEN
                        IF ( erfc_scrlen > 0 ) THEN
-                          IF (igcx == 29) THEN !@WC
+                          IF (igcx == 41) THEN !@WC
                              IF (exxalfa == 0) exxalfa = 0.0001_DP
                              div = div + exp(-alpha*qq)/qq* &
                                 (1.0_dp+exp(-qq*tpiba2/4.0/erfc_scrlen**2)*exxbeta/exxalfa)*&
@@ -3245,7 +3245,7 @@ MODULE exx
         q_ = dq * (iq+0.5d0)
         qq = q_ * q_
         IF ( erfc_scrlen > 0 ) THEN
-           IF (igcx == 29) THEN !@WC
+           IF (igcx == 41) THEN !@WC
              IF (exxalfa == 0) exxalfa = 0.0001_DP
              aa = aa + exp(-alpha*qq)*exp(-qq/4.0/erfc_scrlen**2)*exxbeta/exxalfa*dq
            ELSE
@@ -3425,7 +3425,7 @@ MODULE exx
 
                   ELSEIF (qq > 1.d-8) THEN
                       IF ( erfc_scrlen > 0 ) THEN
-                         IF ( igcx == 29 ) THEN !@WC: CAM
+                         IF ( igcx == 41 ) THEN !@WC: CAM
                             !TODO fac_stress(ig)
                             fac(ig)=e2*fpi/qq*(1._dp+exp(-qq/4.d0/erfc_scrlen**2)*exxbeta/exxalfa)*grid_factor
                          ELSE

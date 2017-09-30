@@ -2197,6 +2197,9 @@ SUBROUTINE qes_write_hybrid(xp, obj)
       CALL xml_NewElement(xp, 'exx_fraction')
          CALL xml_addCharacters(xp, obj%exx_fraction, fmt = 's16')
       CALL xml_EndElement(xp, 'exx_fraction')
+      CALL xml_NewElement(xp, 'exx_lr_fraction') !@WC
+         CALL xml_addCharacters(xp, obj%exx_lr_fraction, fmt = 's16') !
+      CALL xml_EndElement(xp, 'exx_lr_fraction') !
       CALL xml_NewElement(xp, 'screening_parameter')
          CALL xml_addCharacters(xp, obj%screening_parameter, fmt = 's16')
       CALL xml_EndElement(xp, 'screening_parameter')
@@ -2213,7 +2216,7 @@ SUBROUTINE qes_write_hybrid(xp, obj)
    !
 END SUBROUTINE qes_write_hybrid
 
-SUBROUTINE qes_init_hybrid(obj, tagname, qpoint_grid, ecutfock, exx_fraction, &
+SUBROUTINE qes_init_hybrid(obj, tagname, qpoint_grid, ecutfock, exx_fraction, exx_lr_fraction, & !@WC
                               screening_parameter, exxdiv_treatment, x_gamma_extrapolation, &
                               ecutvcut)
    IMPLICIT NONE
@@ -2224,6 +2227,7 @@ SUBROUTINE qes_init_hybrid(obj, tagname, qpoint_grid, ecutfock, exx_fraction, &
    TYPE(qpoint_grid_type) :: qpoint_grid
    REAL(DP) :: ecutfock
    REAL(DP) :: exx_fraction
+   REAL(DP) :: exx_lr_fraction !@WC
    REAL(DP) :: screening_parameter
    CHARACTER(len=*) :: exxdiv_treatment
    LOGICAL  :: x_gamma_extrapolation
@@ -2235,6 +2239,7 @@ SUBROUTINE qes_init_hybrid(obj, tagname, qpoint_grid, ecutfock, exx_fraction, &
    obj%qpoint_grid = qpoint_grid
    obj%ecutfock = ecutfock
    obj%exx_fraction = exx_fraction
+   obj%exx_lr_fraction = exx_lr_fraction !@WC
    obj%screening_parameter = screening_parameter
    obj%exxdiv_treatment = exxdiv_treatment
    obj%x_gamma_extrapolation = x_gamma_extrapolation

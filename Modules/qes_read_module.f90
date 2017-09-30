@@ -2619,6 +2619,30 @@ MODULE qes_read_module
        END IF
     END IF
     !
+    tmp_node_list => getElementsByTagname(xml_node, "exx_lr_fraction") !@WC --
+    tmp_node_list_size = getLength(tmp_node_list)
+    !
+    IF (tmp_node_list_size /= 1) THEN
+        IF (PRESENT(ierr) ) THEN
+           CALL infomsg("qes_read:hybridType","exx_lr_fraction: wrong number of occurrences")
+           ierr = ierr + 1
+        ELSE
+           CALL errore("qes_read:hybridType","exx_lr_fraction: wrong number of occurrences",10)
+        END IF
+    END IF
+    !
+    tmp_node => item(tmp_node_list, 0)
+    IF (ASSOCIATED(tmp_node))&
+       CALL extractDataContent(tmp_node, obj%exx_lr_fraction, IOSTAT = iostat_ )
+    IF ( iostat_ /= 0 ) THEN
+       IF ( PRESENT (ierr ) ) THEN
+          CALL infomsg("qes_read:hybridType","error reading exx_lr_fraction")
+          ierr = ierr + 1
+       ELSE
+          CALL errore ("qes_read:hybridType","error reading exx_lr_fraction",10)
+       END IF
+    END IF 
+    !
     tmp_node_list => getElementsByTagname(xml_node, "screening_parameter")
     tmp_node_list_size = getLength(tmp_node_list)
     !
