@@ -3193,17 +3193,14 @@ MODULE exx
     REAL(DP) :: qq, xk_cryst(3), sxk(3), xkq(3), vc(3,3), x, q(3)
     ! temp array for vcut_spheric
     REAL(DP) :: delta(3,3)
-<<<<<<< HEAD
+    COMPLEX(DP), ALLOCATABLE :: exxtemp(:,:)
+    INTEGER :: jstart, jend, ipair, jblock_start, jblock_end
+    INTEGER :: ijt, njt, ii, jcount, exxtemp_index
     INTEGER  :: igcx !@WC
 
     igcx = get_igcx() !@WC
     exxalfa = get_exx_fraction() !
     exxbeta = get_exx_lr_fraction() !
-=======
-    COMPLEX(DP), ALLOCATABLE :: exxtemp(:,:)
-    INTEGER :: jstart, jend, ipair, jblock_start, jblock_end
-    INTEGER :: ijt, njt, ii, jcount, exxtemp_index
->>>>>>> upstream/master
 
     CALL start_clock ('exx_stress')
 
